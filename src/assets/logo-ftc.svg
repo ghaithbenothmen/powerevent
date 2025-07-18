@@ -1,0 +1,23 @@
+<!-- Logo SVG Placeholder FTC -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#dc2626;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#991b1b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="45" fill="url(#logoGradient)" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- FTC Text -->
+  <text x="50" y="35" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle">FTC</text>
+  
+  <!-- Powerlifting icon -->
+  <rect x="30" y="55" width="40" height="4" fill="white" rx="2"/>
+  <circle cx="25" cy="57" r="5" fill="white"/>
+  <circle cx="75" cy="57" r="5" fill="white"/>
+  
+  <!-- Decorative elements -->
+  <path d="M 20 70 Q 50 75 80 70" stroke="white" stroke-width="2" fill="none"/>
+</svg>

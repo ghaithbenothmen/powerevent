@@ -1,0 +1,200 @@
+<div class="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white flex flex-col relative overflow-hidden">
+  
+  <!-- Background Pattern -->
+  <div class="absolute inset-0 opacity-5">
+    <div class="grid grid-cols-12 gap-4 h-full">
+      <div *ngFor="let i of [].constructor(144)" class="border border-gray-600"></div>
+    </div>
+  </div>
+
+  <!-- Header avec Logo FTC -->
+  <header class="relative z-10 flex flex-col sm:flex-row justify-between items-center p-3 lg:p-6 gap-3">
+    <div class="flex items-center space-x-3">
+      <!-- Logo FTC depuis assets -->
+      <div class="w-14 h-14 lg:w-18 lg:h-18 rounded-xl flex items-center justify-center shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-300 overflow-hidden">
+        <img 
+          src="assets/power-event.png" 
+          alt="FTC Logo" 
+          class="w-full h-full object-contain"
+          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'"
+        />
+        <!-- Fallback si l'image ne charge pas -->
+        <div class="w-full h-full bg-gradient-to-br from-red-600 to-red-800 rounded-xl flex items-center justify-center" style="display: none;">
+          <span class="text-white font-black text-lg lg:text-xl tracking-wider">FTC</span>
+        </div>
+      </div>
+      <div class="text-left">
+        <h1 class="text-lg lg:text-xl font-bold text-red-400">POWEREVENT</h1>
+        <p class="text-gray-400 text-xs font-light">Compétition Officielle</p>
+      </div>
+    </div>
+    
+    <!-- Info Status -->
+    <div class="text-center sm:text-right">
+      <div class="text-xs text-gray-400 mb-1">Athlètes chargés</div>
+      <div class="text-lg lg:text-xl font-bold text-green-400">{{ athletes.length }}</div>
+      <div class="text-xs text-gray-500 mt-1" *ngIf="fileLoaded">
+        {{ currentAthleteIndex + 1 }} / {{ athletes.length }}
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenu Principal -->
+  <main class="flex-1 flex flex-col justify-center items-center space-y-6 lg:space-y-10 relative z-10 px-4 lg:px-8 py-4">
+    
+    <!-- Chronomètre Principal -->
+    <div class="text-center relative">
+      <!-- Cercle de progression -->
+      <div class="relative w-48 h-48 md:w-56 md:h-56 lg:w-72 lg:h-72 xl:w-80 xl:h-80 mx-auto mb-4 lg:mb-6">
+        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+          <!-- Cercle de fond -->
+          <circle
+            cx="50" cy="50" r="45"
+            fill="none"
+            stroke="rgb(55, 65, 81)"
+            stroke-width="3"
+          />
+          <!-- Cercle de progression -->
+          <circle
+            cx="50" cy="50" r="45"
+            fill="none"
+            [attr.stroke]="timeLeft <= 10 ? 'rgb(239, 68, 68)' : timeLeft <= 30 ? 'rgb(251, 191, 36)' : 'rgb(34, 197, 94)'"
+            stroke-width="3"
+            stroke-linecap="round"
+            [attr.stroke-dasharray]="2 * Math.PI * 45"
+            [attr.stroke-dashoffset]="2 * Math.PI * 45 * (1 - timerProgress / 100)"
+            class="transition-all duration-1000 ease-out"
+          />
+        </svg>
+        
+        <!-- Chronomètre au centre -->
+        <div 
+          class="absolute inset-0 flex items-center justify-center"
+          [@timerPulse]="timerState"
+        >
+          <div 
+            class="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black font-mono transition-all duration-300"
+            [ngClass]="[timerColor, timerGlow]"
+          >
+            {{ formattedTime }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Status du timer -->
+      <div class="text-center mb-4 lg:mb-6">
+        <div class="inline-flex items-center space-x-3 bg-gray-800/50 backdrop-blur-sm px-4 py-2 lg:px-5 lg:py-3 rounded-full border border-gray-600">
+          <div 
+            class="w-3 h-3 rounded-full transition-colors duration-300"
+            [ngClass]="{
+              'bg-green-400 animate-pulse': timerRunning,
+              'bg-red-400': !timerRunning && timeLeft < 60,
+              'bg-gray-400': !timerRunning && timeLeft === 60
+            }"
+          ></div>
+          <span class="text-base lg:text-lg font-semibold">
+            {{ timerRunning ? 'EN COURS' : timeLeft === 60 ? 'PRÊT' : 'ARRÊTÉ' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nom de l'Athlète -->
+    <div class="text-center px-4 w-full max-w-4xl" [@athleteSlide]="currentAthleteName">
+      <div class="bg-gradient-to-r from-transparent via-gray-800/30 to-transparent p-1 rounded-2xl">
+        <div class="bg-gray-900/80 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-gray-700 shadow-2xl">
+          <div class="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-center leading-tight text-white break-words">
+            {{ displayAthleteName }}
+          </div>
+          <div class="text-base lg:text-lg text-gray-400 mt-2 lg:mt-3 font-light" *ngIf="fileLoaded">
+            Athlète {{ currentAthleteIndex + 1 }} sur {{ athletes.length }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contrôles -->
+    <div class="button-container flex flex-wrap justify-center gap-3 lg:gap-4 mt-6 lg:mt-8 px-4 w-full max-w-2xl">
+      <!-- Bouton Démarrer -->
+      <button
+        (click)="startTimer()"
+        [disabled]="!fileLoaded || timerRunning || timeLeft <= 0"
+        [@buttonPress]="buttonStates['start']"
+        class="group relative bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 
+               disabled:from-gray-700 disabled:to-gray-800 disabled:opacity-50 
+               text-white font-bold py-3 px-5 lg:py-4 lg:px-6 rounded-xl text-sm lg:text-base
+               transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100
+               shadow-2xl hover:shadow-green-500/25 disabled:shadow-none
+               border border-green-500/30 hover:border-green-400/50
+               min-w-[130px] lg:min-w-[160px] flex items-center justify-center"
+      >
+        <div class="flex items-center space-x-2">
+          <lucide-icon name="play" class="w-4 h-4 lg:w-5 lg:h-5"></lucide-icon>
+          <span>DÉMARRER</span>
+        </div>
+        <div class="absolute inset-0 bg-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      </button>
+
+      <!-- Bouton Reset -->
+      <button
+        (click)="resetTimer()"
+        [disabled]="!fileLoaded"
+        [@buttonPress]="buttonStates['reset']"
+        class="group relative bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500
+               disabled:from-gray-700 disabled:to-gray-800 disabled:opacity-50
+               text-white font-bold py-3 px-5 lg:py-4 lg:px-6 rounded-xl text-sm lg:text-base
+               transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100
+               shadow-2xl hover:shadow-yellow-500/25 disabled:shadow-none
+               border border-yellow-500/30 hover:border-yellow-400/50
+               min-w-[110px] lg:min-w-[140px] flex items-center justify-center"
+      >
+        <div class="flex items-center space-x-2">
+          <lucide-icon name="rotate-ccw" class="w-4 h-4 lg:w-5 lg:h-5"></lucide-icon>
+          <span>RESET</span>
+        </div>
+        <div class="absolute inset-0 bg-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      </button>
+
+      <!-- Bouton Suivant -->
+      <button
+        (click)="nextAthlete()"
+        [disabled]="!fileLoaded || athletes.length === 0"
+        [@buttonPress]="buttonStates['next']"
+        class="group relative bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500
+               disabled:from-gray-700 disabled:to-gray-800 disabled:opacity-50
+               text-white font-bold py-3 px-5 lg:py-4 lg:px-6 rounded-xl text-sm lg:text-base
+               transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100
+               shadow-2xl hover:shadow-blue-500/25 disabled:shadow-none
+               border border-blue-500/30 hover:border-blue-400/50
+               min-w-[110px] lg:min-w-[140px] flex items-center justify-center"
+      >
+        <div class="flex items-center space-x-2">
+          <lucide-icon name="skip-forward" class="w-4 h-4 lg:w-5 lg:h-5"></lucide-icon>
+          <span>SUIVANT</span>
+        </div>
+        <div class="absolute inset-0 bg-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      </button>
+    </div>
+
+    <!-- Message d'information -->
+    <div class="text-center text-gray-500 text-lg mt-12" *ngIf="!fileLoaded">
+      <div class="bg-gray-800/30 backdrop-blur-sm px-6 py-4 rounded-xl border border-gray-700">
+        <div class="animate-spin w-6 h-6 border-2 border-gray-400 border-t-white rounded-full mx-auto mb-3"></div>
+        Chargement des athlètes...
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="relative z-10 p-3 lg:p-4 text-center">
+    <div class="text-gray-600 text-xs lg:text-sm font-light mb-1">
+      🏋️‍♂️ POWEREVENT COMPETITION SYSTEM 🏋️‍♀️
+    </div>
+    <div class="text-xs text-gray-500 flex flex-wrap justify-center gap-2 lg:gap-3">
+      <span>⌨️ [ESPACE] Démarrer</span>
+      <span>[R] Reset</span>
+      <span>[→/N] Suivant</span>
+      <span>[ESC] Arrêter</span>
+    </div>
+  </footer>
+</div>
