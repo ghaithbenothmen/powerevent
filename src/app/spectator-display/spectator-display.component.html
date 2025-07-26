@@ -29,12 +29,40 @@
       </div>
     </div>
     
+    <!-- Sélection des Groupes -->
+    <div class="flex flex-col sm:flex-row items-center gap-2 mb-3 sm:mb-0">
+      <div class="text-xs text-gray-400 mb-1 sm:mb-0 sm:mr-2">Groupes:</div>
+      <div class="flex gap-1">
+        <button
+          (click)="loadGroup(1)"
+          [class]="'px-3 py-1 rounded-lg text-xs font-bold transition-all duration-300 border ' + (currentGroup === 1 ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25' : 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600')"
+        >
+          GRP 1
+        </button>
+        <button
+          (click)="loadGroup(2)"
+          [class]="'px-3 py-1 rounded-lg text-xs font-bold transition-all duration-300 border ' + (currentGroup === 2 ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25' : 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600')"
+        >
+          GRP 2
+        </button>
+        <button
+          (click)="loadGroup(3)"
+          [class]="'px-3 py-1 rounded-lg text-xs font-bold transition-all duration-300 border ' + (currentGroup === 3 ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/25' : 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600')"
+        >
+          GRP 3
+        </button>
+      </div>
+    </div>
+
     <!-- Info Status -->
     <div class="text-center sm:text-right">
       <div class="text-xs text-gray-400 mb-1">Athlètes chargés</div>
       <div class="text-lg lg:text-xl font-bold text-green-400">{{ athletes.length }}</div>
       <div class="text-xs text-gray-500 mt-1" *ngIf="fileLoaded">
         {{ currentAthleteIndex + 1 }} / {{ athletes.length }}
+      </div>
+      <div class="text-xs text-blue-400 mt-1" *ngIf="fileLoaded">
+        Groupe {{ currentGroup }}
       </div>
     </div>
   </header>
@@ -67,11 +95,11 @@
 
           <!-- Chronomètre géant -->
           <div 
-            class="mb-6 lg:mb-8"
+            class="lg:mb-1"
             [@timerPulse]="timerState"
           >
             <div 
-              class="text-[15rem] md:text-[15rem] lg:text-[28rem] xl:text-[28rem] font-black font-mono leading-none transition-all duration-300"
+              class="text-[20rem] md:text-[20rem] lg:text-[32rem] xl:text-[31rem] font-black font-mono leading-none transition-all duration-300"
               [ngClass]="[timerColor, timerGlow]"
               style="text-shadow: 0 0 40px currentColor;"
             >
@@ -129,23 +157,54 @@
     </div>
 
     <!-- Contrôles -->
-    <div class="button-container flex flex-wrap justify-center gap-3 lg:gap-4 mt-6 lg:mt-8 px-4 w-full max-w-2xl">
-      <!-- Bouton Démarrer -->
+    <div class="button-container flex flex-wrap justify-center gap-3 lg:gap-4 mt-6 lg:mt-8 px-4 w-full max-w-3xl">
+      <!-- Bouton Précédent -->
       <button
-        (click)="startTimer()"
-        [disabled]="!fileLoaded || timerRunning || timeLeft <= 0"
-        [@buttonPress]="buttonStates['start']"
-        class="group relative bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 
-               disabled:from-gray-700 disabled:to-gray-800 disabled:opacity-50 
+        (click)="previousAthlete()"
+        [disabled]="!fileLoaded || athletes.length === 0"
+        [@buttonPress]="buttonStates['previous']"
+        class="group relative bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500
+               disabled:from-gray-700 disabled:to-gray-800 disabled:opacity-50
                text-white font-bold py-3 px-5 lg:py-4 lg:px-6 rounded-xl text-sm lg:text-base
                transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100
-               shadow-2xl hover:shadow-green-500/25 disabled:shadow-none
-               border border-green-500/30 hover:border-green-400/50
-               min-w-[130px] lg:min-w-[160px] flex items-center justify-center"
+               shadow-2xl hover:shadow-purple-500/25 disabled:shadow-none
+               border border-purple-500/30 hover:border-purple-400/50
+               min-w-[120px] lg:min-w-[150px] flex items-center justify-center"
       >
         <div class="flex items-center space-x-2">
-          <lucide-icon name="play" class="w-4 h-4 lg:w-5 lg:h-5"></lucide-icon>
-          <span>DÉMARRER</span>
+          <lucide-icon name="arrow-left" class="w-4 h-4 lg:w-5 lg:h-5"></lucide-icon>
+          <span>PRÉCÉDENT</span>
+        </div>
+        <div class="absolute inset-0 bg-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+      </button>
+
+      <!-- Bouton Démarrer/Pause -->
+      <button
+        (click)="toggleTimer()"
+        [disabled]="!fileLoaded || timeLeft <= 0"
+        [@buttonPress]="buttonStates['toggle']"
+        class="group relative transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100
+               text-white font-bold py-3 px-5 lg:py-4 lg:px-6 rounded-xl text-sm lg:text-base
+               shadow-2xl disabled:shadow-none
+               min-w-[140px] lg:min-w-[170px] flex items-center justify-center"
+        [class]="!fileLoaded || timeLeft <= 0 ? 
+          'bg-gradient-to-r from-gray-700 to-gray-800 border border-gray-600 opacity-50' :
+          (!timerRunning ? 
+            'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 border border-green-500/30 hover:border-green-400/50 hover:shadow-green-500/25' : 
+            'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 border border-orange-500/30 hover:border-red-400/50 hover:shadow-orange-500/25')"
+      >
+        <div class="flex items-center space-x-2">
+          <lucide-icon 
+            *ngIf="!timerRunning" 
+            name="play" 
+            class="w-4 h-4 lg:w-5 lg:h-5">
+          </lucide-icon>
+          <lucide-icon 
+            *ngIf="timerRunning" 
+            name="pause" 
+            class="w-4 h-4 lg:w-5 lg:h-5">
+          </lucide-icon>
+          <span>{{ timerRunning ? 'PAUSE' : 'DÉMARRER' }}</span>
         </div>
         <div class="absolute inset-0 bg-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
       </button>
@@ -206,8 +265,9 @@
       🏋️‍♂️ POWEREVENT COMPETITION SYSTEM 🏋️‍♀️
     </div>
     <div class="text-xs text-gray-500 flex flex-wrap justify-center gap-2 lg:gap-3">
-      <span>⌨️ [ESPACE] Démarrer</span>
+      <span>⌨️ [ESPACE] Démarrer/Pause</span>
       <span>[R] Reset</span>
+      <span>[←/P] Précédent</span>
       <span>[→/N] Suivant</span>
       <span>[ESC] Arrêter</span>
     </div>

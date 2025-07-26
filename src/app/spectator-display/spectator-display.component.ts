@@ -49,6 +49,7 @@ export class SpectatorDisplayComponent implements OnInit, OnDestroy {
   currentAthleteIndex: number = 0;
   currentAthleteName: string = '';
   fileLoaded: boolean = false;
+  currentGroup: number = 1; // Groupe par défaut
 
   // Animation states
   timerState: string = 'normal';
@@ -60,7 +61,7 @@ export class SpectatorDisplayComponent implements OnInit, OnDestroy {
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
-    this.loadAthletesFromFile();
+    this.loadGroup(1); // Charger le groupe 1 par défaut
   }
 
   // Raccourcis clavier
@@ -71,7 +72,7 @@ export class SpectatorDisplayComponent implements OnInit, OnDestroy {
     switch (event.code) {
       case 'Space':
         event.preventDefault();
-        this.startTimer();
+        this.toggleTimer();
         break;
       case 'KeyR':
         event.preventDefault();
@@ -81,6 +82,11 @@ export class SpectatorDisplayComponent implements OnInit, OnDestroy {
       case 'KeyN':
         event.preventDefault();
         this.nextAthlete();
+        break;
+      case 'ArrowLeft':
+      case 'KeyP':
+        event.preventDefault();
+        this.previousAthlete();
         break;
       case 'Escape':
         event.preventDefault();
@@ -93,9 +99,12 @@ export class SpectatorDisplayComponent implements OnInit, OnDestroy {
     this.stopTimer();
   }
 
-  // Load athletes from assets file
-  private loadAthletesFromFile(): void {
-    this.http.get('assets/athletes.txt', { responseType: 'text' })
+  // Load athletes from specific group file
+  loadGroup(groupNumber: number): void {
+    this.currentGroup = groupNumber;
+    const fileName = `athletesgrp${groupNumber}.txt`;
+    
+    this.http.get(`assets/${fileName}`, { responseType: 'text' })
       .subscribe({
         next: (data) => {
           this.athletes = data.split('\n')
@@ -110,10 +119,12 @@ export class SpectatorDisplayComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Erreur lors du chargement du fichier athletes.txt:', error);
-          // Fallback avec des athlètes par défaut
+          console.error(`Erreur lors du chargement du fichier ${fileName}:`, error);
+          // Fallback avec des athlètes par défaut pour ce groupe
           this.athletes = [
-            'Athlète 1', 'Athlète 2', 'Athlète 3', 'Athlète 4', 'Athlète 5'
+            `Athlète Groupe ${groupNumber} - 1`, 
+            `Athlète Groupe ${groupNumber} - 2`, 
+            `Athlète Groupe ${groupNumber} - 3`
           ];
           this.currentAthleteIndex = 0;
           this.currentAthleteName = this.athletes[0];
@@ -121,6 +132,11 @@ export class SpectatorDisplayComponent implements OnInit, OnDestroy {
           this.resetTimer();
         }
       });
+  }
+
+  // Load athletes from assets file (méthode obsolète, gardée pour compatibilité)
+  private loadAthletesFromFile(): void {
+    this.loadGroup(1); // Redirection vers loadGroup
   }
 
   // Timer controls with animation
@@ -136,6 +152,26 @@ export class SpectatorDisplayComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  // Nouvelle méthode pour basculer entre démarrer/pause
+  toggleTimer(): void {
+    if (this.timerRunning) {
+      this.pauseTimer();
+    } else {
+      this.startTimer();
+    }
+    this.animateButton('toggle');
+  }
+
+  // Nouvelle méthode pour mettre en pause
+  pauseTimer(): void {
+    this.timerRunning = false;
+    if (this.timerSubscription) {
+      this.timerSubscription.unsubscribe();
+      this.timerSubscription = undefined;
+    }
+    this.updateTimerState();
   }
 
   stopTimer(): void {
@@ -161,6 +197,19 @@ export class SpectatorDisplayComponent implements OnInit, OnDestroy {
     this.animateButton('next');
     this.stopTimer();
     this.currentAthleteIndex = (this.currentAthleteIndex + 1) % this.athletes.length;
+    this.currentAthleteName = this.athletes[this.currentAthleteIndex];
+    this.resetTimer();
+  }
+
+  // Nouvelle méthode pour aller à l'athlète précédent
+  previousAthlete(): void {
+    if (!this.fileLoaded || this.athletes.length === 0) return;
+    
+    this.animateButton('previous');
+    this.stopTimer();
+    this.currentAthleteIndex = this.currentAthleteIndex === 0 
+      ? this.athletes.length - 1 
+      : this.currentAthleteIndex - 1;
     this.currentAthleteName = this.athletes[this.currentAthleteIndex];
     this.resetTimer();
   }
@@ -193,7 +242,7 @@ export class SpectatorDisplayComponent implements OnInit, OnDestroy {
   get timerColor(): string {
     if (this.timeLeft <= 10) return 'text-red-400';
     if (this.timeLeft <= 30) return 'text-yellow-400';
-    return 'text-green-400';
+    return 'text-white-400';
   }
 
   get timerProgress(): number {
